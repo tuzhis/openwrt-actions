@@ -110,16 +110,20 @@ jobs:
          )
          fi
          
+    - name: Download latest config
+      run: |
+        cd openwrt
+        curl -skL https://raw.githubusercontent.com/Lienol/openwrt-actions/master/user/${{matrix.target}}/config.diff -o .config
+        
     - name: Download package
       id: package
       run: |
         cd openwrt
-        mv ../user/${{matrix.target}}/config.diff .config
         make defconfig
         make download -j8
         find dl -size -1024c -exec ls -l {} \;
         find dl -size -1024c -exec rm -f {} \;
-
+        
     - name: Compile the firmware
       id: compile
       run: |
