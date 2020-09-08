@@ -9,7 +9,7 @@ on:
     paths:
       - 'start'
   schedule:
-    - cron: 0 20 * * *
+    - cron: 0 17 */7 * *
   watch:
     types: [started]
 
@@ -113,7 +113,7 @@ jobs:
     - name: Download latest config
       run: |
         cd openwrt
-        curl -skL https://raw.githubusercontent.com/Lienol/openwrt-actions/master/user/${{matrix.target}}/config.diff -o .config
+        curl -skL https://raw.githubusercontent.com/tuzhis/openwrt-actions/master/user/${{matrix.target}}/config.diff -o .config
         
     - name: Download package
       id: package
