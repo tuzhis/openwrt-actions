@@ -25,7 +25,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [x64-master,x64-1907]
+        target: [x64-main,x64-1907]
     
     steps:
     - name: Checkout
@@ -60,7 +60,7 @@ jobs:
         echo "::set-env name=WECHAT_NOTIFICATION::${WECHAT_NOTIFICATION}"
         
 
-        
+
     - name: Clone source code
       run: |
         git clone ${{ env.REPO_URL }} -b ${{ env.REPO_BRANCH }} openwrt
@@ -150,10 +150,9 @@ jobs:
       run: |
           rm -rf ./Firmware/
           mkdir -p ./Firmware/
-          find openwrt/bin/targets/ -name "*bin*" | xargs -i mv -f {} ./Firmware/
-          find openwrt/bin/targets/ -name "*img*" | xargs -i mv -f {} ./Firmware/
+          find openwrt/bin/targets/ -name "*sysupgrade*bin*" | xargs -i mv -f {} ./Firmware/
+          find openwrt/bin/targets/ -name "*combined*img*" | xargs -i mv -f {} ./Firmware/
 
-    
     - name: Upload Packages to release
       if: env.UPLOAD_PACKAGES_DIR == 'true' && env.UPLOAD_TO_REALEASE == 'true' && !cancelled() &&  steps.compile.outputs.status == 'success'
       uses: svenstaro/upload-release-action@v1-release
@@ -175,7 +174,6 @@ jobs:
         tag: ${{ env.DATE }}
         overwrite: true
         file_glob: true
-
         
     - name: Upload Packages to CowTransfer
       if: env.UPLOAD_PACKAGES_DIR == 'true' && env.UPLOAD_TO_COWTRANSFER == 'true' && !cancelled() &&  steps.compile.outputs.status == 'success'
@@ -188,7 +186,6 @@ jobs:
       run: |
         curl -fsSL git.io/file-transfer | sh
          ./transfer cow --block 2621440 -s -p 64 --no-progress openwrt/bin/${{matrix.target}}_targets.tar
-        
 
     - name: Upload packages directory
       if: env.UPLOAD_PACKAGES_DIR == 'true' && env.UPLOAD_TO_ARTIFACTS == 'true' && !cancelled()　&& steps.compile.outputs.status == 'success'
@@ -208,8 +205,18 @@ jobs:
       if: env.UPLOAD_FIRMWARE == 'true' && env.UPLOAD_TO_ARTIFACTS == 'true' && !cancelled() && steps.compile.outputs.status == 'success'
       uses: actions/upload-artifact@main
       with:
-        name: OpenWrt_firmware_${{matrix.target}}
-        path: ./Firmware/
+        name: ${{matrix.target}}_Firmware
+        path: |
+          ./Firmware/*squashfs*
+          !./Firmware/*efi*
+          !./Firmware/*rootfs*
+
+    - name: Upload EFI Firmware
+      if: env.UPLOAD_FIRMWARE == 'true' && env.UPLOAD_TO_ARTIFACTS == 'true' && !cancelled() && steps.compile.outputs.status == 'success'
+      uses: actions/upload-artifact@main
+      with:
+        name: ${{matrix.target}}_EFI_Firmware
+        path: ./Firmware/*efi*
                
     - name: WeChat notification
       if: env.WECHAT_NOTIFICATION == 'true' && !cancelled() && steps.compile.outputs.status == 'success'
